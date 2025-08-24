@@ -11,6 +11,8 @@ use std::time::Duration;
 #[cfg(target_os = "windows")]
 use windows::Win32::Foundation::{COLORREF, HINSTANCE, HWND, LPARAM, LRESULT, RECT, WPARAM};
 #[cfg(target_os = "windows")]
+use windows::Win32::Graphics::Dwm::DwmFlush;
+#[cfg(target_os = "windows")]
 use windows::Win32::Graphics::Gdi::HGDIOBJ;
 #[cfg(target_os = "windows")]
 use windows::Win32::Graphics::Gdi::*;
@@ -256,8 +258,9 @@ fn run_overlay_window(state: Arc<AtomicBool>) {
         let _ = UpdateWindow(hwnd);
     }
 
-    // Message loop with periodic repaint
+    // Message loop with event-driven repaint
     let mut msg = MSG::default();
+    let mut last_state = get_state_on();
     loop {
         while unsafe { PeekMessageW(&mut msg, None, 0, 0, PM_REMOVE).as_bool() } {
             if msg.message == WM_QUIT {
@@ -268,9 +271,15 @@ fn run_overlay_window(state: Arc<AtomicBool>) {
                 let _ = DispatchMessageW(&msg);
             }
         }
-        // trigger paint roughly 10-20fps
-        let _ = unsafe { InvalidateRect(Some(hwnd), None, false) };
-        thread::sleep(Duration::from_millis(50));
+
+        // Repaint only when state toggles
+        let current = get_state_on();
+        if current != last_state {
+            let _ = unsafe { InvalidateRect(Some(hwnd), None, false) };
+            last_state = current;
+        }
+        // Block until the Desktop Window Manager has finished composition
+        let _ = unsafe { DwmFlush() };
     }
 }
 

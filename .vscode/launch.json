@@ -1,0 +1,126 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Start",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--package=game-cc",
+                    "--bin=main"
+                ],
+                "filter": {
+                    "name": "main",
+                    "kind": "bin"
+                },
+                "cwd": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "cwd": "${workspaceFolder}",
+            //"envFile": "${workspaceFolder}/config/local.env",
+            "env": {
+                "RUST_LOG": "debug",
+                "RUST_BACKTRACE": "1"
+            },
+            "args": [],
+            "preLaunchTask": "cargo:build",
+            "stopOnEntry": false
+        },
+        {
+            "name": "Test All Tests",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--package=game-cc",
+                    "--",
+                    "--nocapture"
+                ],
+                "filter": {
+                    "name": "game-cc",
+                    "kind": "lib"
+                },
+                "cwd": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_LOG": "debug",
+                "RUST_BACKTRACE": "1"
+            },
+            "args": [],
+            "stopOnEntry": false
+        },
+        {
+            "name": "Release",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--release",
+                    "--package=game-cc",
+                    "--bin=main"
+                ],
+                "filter": {
+                    "name": "game-cc",
+                    "kind": "bin"
+                },
+                "cwd": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "cwd": "${workspaceFolder}",
+            //"envFile": "${workspaceFolder}/config/local.env",
+            "env": {
+                "RUST_LOG": "info",
+                "RUST_BACKTRACE": "0"
+            },
+            "args": [],
+            "preLaunchTask": "cargo:build",
+            "stopOnEntry": false
+        },
+        {
+            "name": "Debug Specific Test",
+            "type": "lldb",
+            "request": "launch",
+            "cargo": {
+                "args": [
+                    "test",
+                    "${input:testName}",
+                    "--package=game-cc",
+                    "--no-run"
+                ],
+                "filter": {
+                    "name": "game-cc",
+                    "kind": "lib"
+                },
+                "cwd": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "RUST_LOG": "debug",
+                "RUST_BACKTRACE": "1"
+            },
+            "args": [
+                "--nocapture"
+            ],
+            "stopOnEntry": false
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testName",
+            "description": "Enter test name to debug",
+            "default": "test_",
+            "type": "promptString"
+        }
+    ]
+}

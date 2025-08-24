@@ -13,7 +13,8 @@ use windows::Win32::System::Com::{
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBD_EVENT_FLAGS, KEYBDINPUT,
-    KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, MAPVK_VK_TO_VSC, MapVirtualKeyW, SendInput, VIRTUAL_KEY,
+    KEYEVENTF_KEYUP, /* KEYEVENTF_SCANCODE, MAPVK_VK_TO_VSC, MapVirtualKeyW, */
+    SendInput, VIRTUAL_KEY,
 };
 #[cfg(target_os = "windows")]
 const VK_PAGE_UP: i32 = 0x21; // VK_PRIOR (Page Up)

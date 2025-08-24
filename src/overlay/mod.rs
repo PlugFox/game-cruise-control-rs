@@ -130,9 +130,9 @@ unsafe extern "system" fn overlay_wnd_proc(
             unsafe { FillRect(hdc, &client, black_brush) };
 
             // Compute box in top-right
-            let padding = 16;
-            let box_w = 120;
-            let box_h = 48;
+            let padding = 8;
+            let box_w = 64;
+            let box_h = 24;
             let left = client.right - box_w - padding;
             let top = client.top + padding;
             let rect = RECT {

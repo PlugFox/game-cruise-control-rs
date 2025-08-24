@@ -13,10 +13,12 @@ use windows::Win32::System::Com::{
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBD_EVENT_FLAGS, KEYBDINPUT,
-    KEYEVENTF_KEYUP, MAPVK_VK_TO_VSC, MapVirtualKeyW, SendInput, VIRTUAL_KEY,
+    KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, MAPVK_VK_TO_VSC, MapVirtualKeyW, SendInput, VIRTUAL_KEY,
 };
 #[cfg(target_os = "windows")]
 const VK_PAGE_UP: i32 = 0x21; // VK_PRIOR (Page Up)
+#[cfg(target_os = "windows")]
+const VK_PAGE_DOWN: i32 = 0x22; // VK_NEXT (Page Down)
 #[cfg(target_os = "windows")]
 const VK_W: i32 = 0x57; // VK_W
 #[cfg(target_os = "windows")]
@@ -33,7 +35,7 @@ fn main() {
 
 #[cfg(target_os = "windows")]
 fn main() {
-    println!("Page Up: start/stop cruise. Stop also on W, S, or Space. Ctrl+C to exit.");
+    println!("Start cruise on Page Up. Stops on S or Space. Ctrl+C to exit.");
 
     // Cruise control state
     let mut cruise_active = false;
@@ -41,48 +43,73 @@ fn main() {
     loop {
         // Current physical key states
         let pgup_down = is_key_down(VK_PAGE_UP);
+        let pgdown_down = is_key_down(VK_PAGE_DOWN);
         let w_down = is_key_down(VK_W);
         let s_down = is_key_down(VK_S);
         let space_down = is_key_down(VK_SPACE);
 
         if cruise_active {
-            if s_down || space_down {
+            if s_down || space_down || pgdown_down {
                 // Stop cruise control on S or Space
                 cruise_active = false;
-                cruise_control_stop();
-                speak_async("Cruise control disabled");
+                cruise_control_stop(true);
             } else if !w_down {
-                // User released W physically, so we should re-engage cruise control
-                cruise_control_start();
+                // If W is released, start cruise control again
+                cruise_control_start(false);
             }
         } else if pgup_down {
             // Start cruise control
-            cruise_control_start();
+            cruise_control_start(true);
             cruise_active = true;
-            speak_async("Cruise control enabled");
         }
 
         thread::sleep(Duration::from_millis(10));
     }
 }
 
+/*
 /// Maps a virtual key code to its scan code.
 #[cfg(target_os = "windows")]
 fn vk_scan(vk: u16) -> u16 {
     unsafe { MapVirtualKeyW(vk as u32, MAPVK_VK_TO_VSC) as u16 }
-}
+} */
 
+/*
+/// Send a key event using scan codes.
 #[cfg(target_os = "windows")]
-fn send_key(vk: u16, down: bool) {
+fn send_key_scancode(vk: u16, down: bool) {
+    let mut flags: KEYBD_EVENT_FLAGS = KEYEVENTF_SCANCODE;
+    if !down {
+        flags |= KEYEVENTF_KEYUP;
+    }
+    let scan = vk_scan(vk);
+    let ki = KEYBDINPUT {
+        wVk: VIRTUAL_KEY(0),
+        wScan: scan,
+        dwFlags: flags,
+        time: 0,
+        dwExtraInfo: 0,
+    };
+    let input = INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 { ki },
+    };
+    unsafe {
+        let _ = SendInput(&[input], std::mem::size_of::<INPUT>() as i32);
+    }
+} */
+
+/// Send a key event using virtual key codes.
+#[cfg(target_os = "windows")]
+fn send_key_vk(vk: u16, down: bool) {
     let flags: KEYBD_EVENT_FLAGS = if down {
         KEYBD_EVENT_FLAGS(0)
     } else {
         KEYEVENTF_KEYUP
     };
-    let scan = vk_scan(vk);
     let ki = KEYBDINPUT {
         wVk: VIRTUAL_KEY(vk),
-        wScan: scan,
+        wScan: 0,
         dwFlags: flags,
         time: 0,
         dwExtraInfo: 0,
@@ -96,21 +123,33 @@ fn send_key(vk: u16, down: bool) {
     }
 }
 
-fn cruise_control_start() {
+/// Start cruise control.
+fn cruise_control_start(speak: bool) {
     const VK_W_U16: u16 = 0x57;
-    send_key(VK_W_U16, true);
+    //send_key_scancode(VK_W_U16, true);
+    send_key_vk(VK_W_U16, true);
+    if speak {
+        speak_async("Cruise control enabled");
+    }
 }
 
-fn cruise_control_stop() {
+/// Stop cruise control.
+fn cruise_control_stop(speak: bool) {
     const VK_W_U16: u16 = 0x57;
-    send_key(VK_W_U16, false);
+    send_key_vk(VK_W_U16, false);
+    //send_key_scancode(VK_W_U16, false);
+    if speak {
+        speak_async("Cruise control disabled");
+    }
 }
 
+/// Check if a virtual key is currently pressed.
 #[cfg(target_os = "windows")]
 fn is_key_down(vk: i32) -> bool {
     unsafe { (GetAsyncKeyState(vk) as u16) & 0x8000 != 0 }
 }
 
+/// Speak a text asynchronously.
 #[cfg(target_os = "windows")]
 fn speak_async(text: &str) {
     let text = text.to_string();

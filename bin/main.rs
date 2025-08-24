@@ -46,6 +46,16 @@ fn main() {
     // Cruise control state
     let cruise_active = Arc::new(AtomicBool::new(false));
 
+    // Graceful shutdown flag (set by Ctrl+C)
+    let should_exit = Arc::new(AtomicBool::new(false));
+    {
+        let should_exit = Arc::clone(&should_exit);
+        // Install Ctrl+C handler
+        let _ = ctrlc::set_handler(move || {
+            should_exit.store(true, Ordering::Relaxed);
+        });
+    }
+
     // Start overlay thread (Windows only)
     #[cfg(target_os = "windows")]
     {
@@ -56,7 +66,16 @@ fn main() {
         });
     }
 
+    // Main input loop
     loop {
+        if should_exit.load(Ordering::Relaxed) {
+            // Ensure we release W if held and announce stop
+            if cruise_active.load(Ordering::Relaxed) {
+                cruise_active.store(false, Ordering::Relaxed);
+                cruise_control_stop(true);
+            }
+            break;
+        }
         // Current physical key states
         let pgup_down = is_key_down(VK_PAGE_UP);
         let pgdown_down = is_key_down(VK_PAGE_DOWN);
@@ -81,6 +100,8 @@ fn main() {
 
         thread::sleep(Duration::from_millis(10));
     }
+
+    println!("Exiting. Bye.");
 }
 
 /// Send a key event using virtual key codes.

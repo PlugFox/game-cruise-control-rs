@@ -210,7 +210,7 @@ fn run_overlay_window(state: Arc<AtomicBool>) {
     let h_instance = HINSTANCE(h_module.0);
 
     // Register window class
-    let class_name = w!("GameCC_Overlay_Class");
+    let class_name = w!("CC_Status_Overlay_Class");
     let wc = WNDCLASSW {
         style: CS_HREDRAW | CS_VREDRAW,
         lpfnWndProc: Some(overlay_wnd_proc),
@@ -232,7 +232,7 @@ fn run_overlay_window(state: Arc<AtomicBool>) {
         CreateWindowExW(
             ex_style,
             class_name,
-            w!("GameCC Overlay"),
+            w!("CC Status Overlay"),
             style,
             0,
             0,
